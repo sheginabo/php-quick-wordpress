@@ -19,12 +19,10 @@ import { sleep, check } from 'k6';
 
 export let options = {
     stages: [
-        { duration: '5m', target: 50 },    // 5分鐘內漸增至50用戶
-        { duration: '10m', target: 200 },  // 10分鐘內增加到200用戶
-        { duration: '30m', target: 200 },  // 保持200用戶30分鐘
-        { duration: '2m', target: 500 },   // 2分鐘內快速增加到500用戶
-        { duration: '10m', target: 500 },  // 保持500用戶10分鐘
-        { duration: '5m', target: 0 },     // 5分鐘內減少到0用戶
+        { duration: '2m', target: 50 },    // 2分鐘內漸增至50用戶
+        { duration: '3m', target: 200 },  // 10分鐘內增加到200用戶
+        { duration: '1m', target: 200 },  // 保持200用戶2分鐘
+        { duration: '3m', target: 0 },     // 5分鐘內減少到0用戶
     ],
 };
 
@@ -34,7 +32,7 @@ export default function () {
     // 1. 訪問商店首頁
     let res = http.get('http://localhost:8080/shop');
     check(res, { 'status was 200': (r) => r.status === 200 });
-    sleep(1);
+    sleep(10);
 
     // // 2. login
     // let loginRes = http.post('http://localhost:8080/wp-login.php', {
@@ -68,7 +66,7 @@ export default function () {
     // 瀏覽產品頁面
     res = http.get('http://localhost:8080/product/delicious_canned_food/');
     check(res, { 'status was 200': (r) => r.status === 200 });
-    sleep(1);
+    sleep(10);
 
     // // AJAX 方式添加到購物車
     // let ajaxRes = http.post('http://localhost:8080/?wc-ajax=add_to_cart', {
@@ -83,14 +81,14 @@ export default function () {
         quantity: '1',
     });
     check(formRes, { 'Form add to cart successful': (r) => r.status === 200 });
-    sleep(1);
+    sleep(10);
 
     // 5. checkout
     res = http.get('http://localhost:8080/checkout/');
     //res = http.get('http://localhost:8080/checkout/', { headers });
     //console.log(res.body);
     check(res, { 'checkout page status was 200': (r) => r.status === 200 });
-    sleep(1);
+    sleep(10);
 
     // 6. 提交訂單 (使用 AJAX 方式)
     let nonceMatch = res.body.match(/<input[^>]*id=["']woocommerce_nonce_input["'][^>]*value=["']([^"']+)["']/i);
@@ -139,7 +137,7 @@ export default function () {
         'Checkout completed': (r) => r.status === 200 && r.body.includes('order-received'),
     });
 
-    sleep(1); // 等待 1 秒，以模擬真實用戶行為
+    sleep(10); // 等待 1 秒，以模擬真實用戶行為
 
 
     // // 7. 登出或遺忘 cookie
