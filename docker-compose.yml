@@ -1,0 +1,71 @@
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    container_name: wordpress_nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./wordpress:/var/www/html   # 使用本地的 WordPress 安裝目錄
+    depends_on:
+      - app
+    networks:
+      - wordpress_network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.phpfpm.deploy
+    container_name: wordpress_php-fpm
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: demo
+      WORDPRESS_DB_PASSWORD: demo
+      WORDPRESS_DB_NAME: demo
+      WORDPRESS_TABLE_PREFIX: wp_    # 指定數據表前綴
+      WORDPRESS_DEBUG: '1'           # 開啟 Debug 模式
+      WORDPRESS_CONFIG_EXTRA: |
+        define('FS_METHOD', 'direct'); # 設置 WordPress 文件系統的方法
+    volumes:
+      - ./wordpress:/var/www/html   # 使用本地的 WordPress 安裝目錄
+    command: [ "sh", "-c", "chown -R www-data:www-data /var/www/html && php-fpm" ]
+    depends_on:
+      - db
+    networks:
+      - wordpress_network
+
+  db:
+    image: mysql:8
+    container_name: wordpress_db
+    volumes:
+      - db_data:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: demo
+      MYSQL_USER: demo
+      MYSQL_PASSWORD: demo
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_INITDB_SKIP_TZINFO: 1
+      MYSQL_CHARACTER_SET_SERVER: utf8mb4
+      MYSQL_COLLATION_SERVER: utf8mb4_general_ci
+    networks:
+      - wordpress_network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: wordpress_phpmyadmin
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: root
+    depends_on:
+      - db
+    networks:
+      - wordpress_network
+
+volumes:
+  db_data:
+
+networks:
+  wordpress_network:
